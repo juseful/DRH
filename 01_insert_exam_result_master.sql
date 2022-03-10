@@ -42,31 +42,28 @@ for drh in (-- 마스터 정보 기준
                          , b.exmn_cd
                          , c.ordr_ymd     ordr_ymd 
                          , c.enfr_dt
-                         , case
-                                when decode(REGEXP_REPLACE(-- 소수점 앞에 0이 없는 경우를 숫자로 치환
-                                                           (
-                                                            case
-                                                                  when b.exrs_ncvl_vl like '.%'
-                                                                  then '0'||b.exrs_ncvl_vl 
-                                                                  else b.exrs_ncvl_vl
-                                                            end 
-                                                           )
-                                           ,'^-?[0-9]+((\.[0-9]+)([Ee][+-][0-9]+)?)?', ''), null
-                                           ,to_number(
-                                                      (
-                                                       case
-                                                             when b.exrs_ncvl_vl like '.%'
-                                                             then '0'||b.exrs_ncvl_vl 
-                                                             else b.exrs_ncvl_vl
-                                                       end 
-                                                      )
-                                                     )
-                                           , '') between to_number(nvl(d.CLEANED_LWLM_VL,'0')) and to_number(nvl(d.CLEANED_UPLM_VL,'9999999'))
-                                     then '0'||b.exrs_ncvl_vl 
-                                when decode(REGEXP_REPLACE(b.exrs_ncvl_vl,'^-?[0-9]+((\.[0-9]+)([Ee][+-][0-9]+)?)?', ''), null, to_number(b.exrs_ncvl_vl), '') between to_number(nvl(d.CLEANED_LWLM_VL,'0')) and to_number(nvl(d.CLEANED_UPLM_VL,'9999999')) 
-                                     then b.exrs_ncvl_vl
-                           else ''
-                           end
+                         , decode(-- 0이 없는 소수점 데이터를 숫자 형태로 변환
+                                  REGEXP_REPLACE(
+                                                 regexp_replace(
+                                                                (
+                                                                 case 
+                                                                      when b.exrs_ncvl_vl like '.%' then '0'||b.exrs_ncvl_vl
+                                                                      else b.exrs_ncvl_vl
+                                                                  end 
+                                                                )
+                                                               ,'^-?[0-9]+((\.[0-9]+)([Ee][+-][0-9]+)?)?'
+                                                               )
+                                                ,'^-?[0-9]+((\.[0-9]+)([Ee][+-][0-9]+)?)?'
+                                                ,''
+                                                )
+                                 ,'',(
+                                      case
+                                           when b.exrs_ncvl_vl like '.%' then '0'||b.exrs_ncvl_vl
+                                           else b.exrs_ncvl_vl
+                                       end 
+                                     )
+                                 ,''
+                                 )
                            cleaned_vl
                          , b.exrs_ncvl_vl
                          , b.exrs_unit_nm
@@ -78,7 +75,7 @@ for drh in (-- 마스터 정보 기준
                          , 스키마.3E3243333E2E143C28@SMISR_스키마 b
                          , 스키마.3C15332B3C20431528@SMISR_스키마 c
                          , 스키마.1543294D47144D3C0E3E283343@SMISR_스키마 d
-                     where a.ordr_ymd between to_date(&Y||'0101','yyyymmdd') and to_date(&Y||'0430','yyyymmdd')
+                     where a.ordr_ymd between to_date('20160705','yyyymmdd') and to_date('20160705','yyyymmdd')
                        and a.cncl_dt is null
                        and a.pckg_cd = e.pckg_cd
                        and (substr(e.pckg_type_cd,1,1) not in ('6','7','9') -- 생습, 스포츠외래, 서비스 패키지 제외.
