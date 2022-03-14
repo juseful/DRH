@@ -1,3 +1,4 @@
+-- 문진 정보 전체 데이터 이관 실행 script
 -- 문진 기본정보 insert, 문진응답자 전체
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -20,7 +21,7 @@ for drh in (
                  , sysdate                           as rgst_dt
                  , sysdate                           as last_updt_dt
               from (-- 문진 응답내역 전체항목, 최종(가족력 기타암 통합만 있는 것)
-                    -- 문진 응답내역 중 건진동기, 생활습관, 알러지, 약물이상반응, 수술력
+                    -- 문진 응답자 기본 사항
                     -- SMISR 서버의 메모리 리소스를 매우 잡아 먹는 관계로 카테고리 분할함.
                     select /*+ ordered use_nl(A F) index(a 3E3C0E433E3C0E3E28_i13) index(f 3E3C23302E333E0E28_pk) */
                            f.rprs_apnt_no
@@ -33,7 +34,7 @@ for drh in (
                          , 스키마.3E3C23302E333E0E28@SMISR_스키마  f
                          , 스키마.3E3C23302E333E3C28@SMISR_스키마  g
                      where 
-                           a.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                           a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
                        and a.cncl_dt is null
                        and b.ptno = a.ptno
@@ -104,9 +105,8 @@ end ;
 /
 print var_msg2
 print var_msg3
-spool off
-exit;
-
+spool off;
+   
 -- 문진 정보 update, 건진동기, 생활습관, 알러지, 약물이상반응, 수술력
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -1187,7 +1187,7 @@ for drh in (
                          , 스키마.3E3C23302E333E0E28@SMISR_스키마  f
                          , 스키마.3E3C23302E333E3C28@SMISR_스키마  g
                      where 
-                           a.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                           a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
                        and a.cncl_dt is null
                        and b.ptno = a.ptno
@@ -1308,9 +1308,8 @@ end ;
 /
 print var_msg2
 print var_msg3
-spool off
-exit;
-
+spool off;
+     
 -- 문진 정보 update, 질병력
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -2840,7 +2839,7 @@ for drh in (
                     --                         ,'04032026' -- MA1문진 응답자
                     --                         )
                     --           and 
-                                   b.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                                   b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
                                and a.ptno = b.ptno
@@ -2854,6 +2853,7 @@ for drh in (
                                and b.ptno not in (
                                                   &not_in_ptno
                                                  )
+                               and b.rprs_apnt_no = a.rprs_apnt_no
                              group by a.PTNO
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
@@ -3073,9 +3073,8 @@ end ;
 /
 print var_msg2
 print var_msg3
-spool off
-exit;
-
+spool off;
+     
 -- 문진 정보 update, 암병력                                                                   
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환                        
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함                             
@@ -4141,7 +4140,7 @@ for drh in (-- 데이터 select
                     --                         ,'04032026' -- MA1문진 응답자
                     --                         )
                     --           and 
-                                   b.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                                   b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
                                and a.ptno = b.ptno
@@ -4155,6 +4154,7 @@ for drh in (-- 데이터 select
                                and b.ptno not in (
                                                   &not_in_ptno
                                                  )
+                               and b.rprs_apnt_no = a.rprs_apnt_no
                              group by a.PTNO
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
@@ -4309,9 +4309,8 @@ end ;
 /                                                                                     
 print var_msg2                                                                        
 print var_msg3                                                                        
-spool off                                                                             
-exit;                                                                                 
-
+spool off;
+      
 -- 문진 정보 update, 약복용력
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -4948,8 +4947,8 @@ for drh in (
                                                    case 
                                                         when a.inpc_cd = 'AM' and (a.item_sno between 132 and 147) then a.inqy_rspn_cd
                                                         when a.inpc_cd = 'RR' and (a.item_sno between 103 and 118) then a.inqy_rspn_cd
-                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) then a.ceck_yn||a.inqy_rspn_ctn1--  MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
-                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) then a.inqy_rspn_ctn1
+                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) and a.item_sno != 290 then a.ceck_yn||a.inqy_rspn_ctn1--  MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
+                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) and a.item_sno != 290 then a.inqy_rspn_ctn1
                                                         else ''
                                                    end
                                                   ) = 0
@@ -4966,8 +4965,8 @@ for drh in (
                                                    case 
                                                         when a.inpc_cd = 'AM' and (a.item_sno between 132 and 147) then a.inqy_rspn_cd
                                                         when a.inpc_cd = 'RR' and (a.item_sno between 103 and 118) then a.inqy_rspn_cd
-                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) then a.ceck_yn||a.inqy_rspn_ctn1--  MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
-                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) then a.inqy_rspn_ctn1
+                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) and a.item_sno != 290 then a.ceck_yn||a.inqy_rspn_ctn1--  MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
+                                                        when a.inpc_cd = 'MA1' and (a.item_sno between 231 and 295) and a.item_sno != 290 then a.inqy_rspn_ctn1
                                                         else ''
                                                    end
                                                   ) > 0
@@ -4982,7 +4981,7 @@ for drh in (
                     --                         ,'04032026' -- MA1문진 응답자
                     --                         )
                     --           and 
-                                   b.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                                   b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
                                and a.ptno = b.ptno
@@ -4996,6 +4995,7 @@ for drh in (
                                and b.ptno not in (
                                                   &not_in_ptno
                                                  )
+                               and b.rprs_apnt_no = a.rprs_apnt_no
                              group by a.PTNO
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
@@ -5119,9 +5119,8 @@ end ;
 /
 print var_msg2
 print var_msg3
-spool off
-exit;
-
+spool off;
+     
 -- 문진 정보 update, 가족력
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -7033,7 +7032,7 @@ for drh in (-- 데이터 select
                     --                         ,'04032026' -- MA1문진 응답자
                     --                         )
                     --           and 
-                                   b.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                                   b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
                                and a.ptno = b.ptno
@@ -7047,6 +7046,7 @@ for drh in (-- 데이터 select
                                and b.ptno not in (
                                                   &not_in_ptno
                                                  )
+                               and b.rprs_apnt_no = a.rprs_apnt_no
                              group by a.PTNO
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
@@ -7327,9 +7327,8 @@ end ;
 /
 print var_msg2
 print var_msg3
-spool off
-exit;
-
+spool off;
+     
 -- 문진 정보 update, 남성, 여성, 스트레스
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -8644,7 +8643,7 @@ for drh in (
                          , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
                          , 스키마.3E3C23302E333E3C28@SMISR_스키마 g
                      where 
-                           a.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                           a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
                        and a.cncl_dt is null
                        and b.ptno = a.ptno
@@ -8766,9 +8765,8 @@ end ;
 /
 print var_msg2
 print var_msg3
-spool off
-exit;
-
+spool off;
+     
 -- 문진 정보 update, 계통별 설문
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -9401,7 +9399,7 @@ for drh in (
                          , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
                          , 스키마.3E3C23302E333E3C28@SMISR_스키마 g
                      where 
-                           a.ordr_prrn_ymd between to_date('20190422','yyyymmdd') and to_date('20190422','yyyymmdd')
+                           a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
                        and a.cncl_dt is null
                        and b.ptno = a.ptno
@@ -9542,1292 +9540,6 @@ for drh in (
             end loop;
        
 :var_msg2  := 'update '  || to_char(upcnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
-   
-end ;
-/
-print var_msg2
-print var_msg3
-spool off
-exit;
-
--- 문진 기초정보 insert, 건진동기, 생활습관, 알러지, 약물이상반응, 수술력
--- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
--- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
-variable var_msg2 char(40);
-variable var_msg3 char(40);
-  
-declare
-    incnt     number(10) := 0;
-    errcnt    number(10) := 0;
-        
-begin
-for drh in (
-            -- 데이터 select
-            select a.RPRS_APNT_NO                    as "1"
-                 , a.PTNO                            as "2"
-                 , a.ORDR_PRRN_YMD                   as "3"
-                 , a.INPC_CD                         as "4"
-                 , a.FOREIGN                         as "5"
-                 , a.EXAM_MOTIVE                     as "6"
-                 , a.EXAM                            as "7"
-                 , a.EXAM_FIRST_AGE                  as "8"
-                 , a.EXAM_MOST_RECENT_YY             as "9"
-                 , a.EXAM_MOST_RECENT_MM             as "10"
-                 , a.EXAM_FREQ_YR                    as "11"
-                 , a.EXAM_PLACE                      as "12"
-                 , a.MARITAL_STATUS                  as "13"
-                 , a.EDUCATION                       as "14"
-                 , a.INCOME                          as "15"
-                 , a.SMK_YS                          as "16"
-                 , a.SMK                             as "17"
-                 , a.SMK_DURATION                    as "18"
-                 , a.SMK_CURRENT_AMOUNT              as "19"
-                 , a.SMK_START_AGE                   as "20"
-                 , a.SMK_END_YR                      as "21"
-                 , a.SMK_PACKYRS                     as "22"
-                 , a.ALC_YS                          as "23"
-                 , a.ALC                             as "24"
-                 , a.ALC_FREQ                        as "25"
-                 , a.ALC_AMOUNT_DRINKS               as "26"
-                 , a.ALC_START_AGE                   as "27"
-                 , a.ALC_DURATION                    as "28"
-                 , a.ALC_ENDYR                       as "29"
-                 , a.ALC_AMOUNT_GRAMS                as "30"
-                 , a.PHY                             as "31"
-                 , a.OVERALL_PHYSICAL_ACTIVITY       as "32"
-                 , a.PHY_FREQ_2009                   as "33"
-                 , a.PHY_DURATION_2009               as "34"
-                 , a.PHY_FREQ                        as "35"
-                 , a.PHY_DURATION                    as "36"
-                 , a.PHY_STARTYR                     as "37"
-                 , a.PHY_WALKING                     as "38"
-                 , a.PHY_JOGGING                     as "39"
-                 , a.PHY_TENNIS                      as "40"
-                 , a.PHY_GOLF                        as "41"
-                 , a.PHY_SWIMMING                    as "42"
-                 , a.PHY_CLIMBING                    as "43"
-                 , a.PHY_AEROBIC                     as "44"
-                 , a.PHY_FITNESS                     as "45"
-                 , a.PHY_OTHER                       as "46"
-                 , a.ALLERGY                         as "47"
-                 , a.ALLERGY_PENICILLIN              as "48"
-                 , a.ALLERGY_SULFA                   as "49"
-                 , a.ALLERGY_CONTRAST_AGENT          as "50"
-                 , a.ALLERGY_LOCAL_ANESTHETIC        as "51"
-                 , a.ALLERGY_ASPIRIN                 as "52"
-                 , a.ALLERGY_OTHER                   as "53"
-                 , a.ALLERGY_UNKNOWN                 as "54"
-                 , a.ADVERSE_MED                     as "55"
-                 , a.ADVERSE_MED_ANTIBIOTICS         as "56"
-                 , a.ADVERSE_MED_CONTRAST_AGENT      as "57"
-                 , a.ADVERSE_MED_LOCAL_ANESTHETIC    as "58"
-                 , a.ADVERSE_MED_ASPIRIN_PAINKILLER  as "59"
-                 , a.ADVERSE_MED_OTHER               as "60"
-                 , a.SURGERY_STOMACH                 as "61"
-                 , a.SURGERY_GALLBLADDER             as "62"
-                 , a.SURGERY_COLON                   as "63"
-                 , a.SURGERY_APPENDIX                as "64"
-                 , a.SURGERY_THYROID                 as "65"
-                 , a.SURGERY_UTERUS                  as "66"
-                 , a.SURGERY_OVARY                   as "67"
-                 , a.SURGERY_BREAST                  as "68"
-                 , a.SURGERY_KIDNEY                  as "69"
-                 , a.SURGERY_OTHER                   as "70"
-                 , '1.0'                             as UPDT_VER
-                 , sysdate                           as rgst_dt
-                 , sysdate                           as last_updt_dt
-              from (-- 문진 응답내역 전체항목, 최종(가족력 기타암 통합만 있는 것)
-                    -- 문진 응답내역 중 건진동기, 생활습관, 알러지, 약물이상반응, 수술력
-                    -- SMISR 서버의 메모리 리소스를 매우 잡아 먹는 관계로 카테고리 분할함.
-                    select /*+ ordered use_nl(A F) index(a 3E3C0E433E3C0E3E28_i13) index(f 3E3C23302E333E0E28_pk) */
-                           f.rprs_apnt_no
-                         , F.PTNO
-                         , f.ordr_prrn_ymd
-                         , f.inpc_cd
-                         , decode(substr(b.brrn,1,1),'5','1','6','1','7','1','8','1','0') foreign
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM2Y'  ,'1'
-                                                                      ,'AM3Y'  ,'0'
-                                                                      ,'AM2'   ,'1'
-                                                                      ,'AM3'   ,'0'
-                                                                      ,'MA12Y' ,'1'
-                                                                      ,'MA13Y' ,'0'
-                                                                      ,'RR2Y'  ,'1'
-                                                                      ,'RR3Y'  ,'0','')) exam_motive
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM6Y'  ,'1'
-                                                                      ,'AM10Y' ,'0'
-                                                                      ,'AM6'   ,'1'
-                                                                      ,'AM10'  ,'0'
-                                     ,decode(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )
-                              ) exam
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM7'  ,f.inqy_rspn_ctn1
-                                     ,decode(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )
-                              ) exam_first_age
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM8'  ,f.inqy_rspn_ctn1
-                                     ,decode(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )
-                              ) exam_most_recent_yy
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM8'  ,f.inqy_rspn_ctn2
-                                     ,decode(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )
-                              ) exam_most_recent_mm
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM9'  ,f.inqy_rspn_ctn2
-                                     ,decode(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )
-                              ) exam_freq_yr
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'RR5Y' ,'1'
-                                                                      ,'RR6Y' ,'0'
-                                                                      ,'RR5'  ,'1'
-                                                                      ,'RR6'  ,'0'
-                                                                      ,decode(f.inpc_cd,'AM' ,'9999'
-                                                                                       ,'MA1','9999','')
-                                     )
-                              ) exam_place
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM12Y' ,'0'
-                                                                      ,'AM13Y' ,'1'
-                                                                      ,'AM14Y' ,'2'
-                                                                      ,'AM15Y' ,'3'
-                                                                      ,'AM16Y' ,'4'
-                                                                      ,'RR8Y' ,'0'
-                                                                      ,'RR9Y' ,'1'
-                                                                      ,'RR10Y','2'
-                                                                      ,'RR11Y','3'
-                                                                      ,'RR12Y','4'
-                                                                      ,'AM12'  ,'0'
-                                                                      ,'AM13'  ,'1'
-                                                                      ,'AM14'  ,'2'
-                                                                      ,'AM15'  ,'3'
-                                                                      ,'AM16'  ,'4'
-                                                                      ,'RR8'  ,'0'
-                                                                      ,'RR9'  ,'1'
-                                                                      ,'RR10' ,'2'
-                                                                      ,'RR11' ,'3'
-                                                                      ,'RR12' ,'4'
-                                     ,decode(f.inpc_cd,'MA1','9999','')
-                                     )
-                              ) marital_status
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM18Y' ,'0'
-                                                                      ,'AM19Y' ,'1'
-                                                                      ,'AM20Y' ,'2'
-                                                                      ,'AM21Y' ,'3'
-                                                                      ,'AM22Y' ,'4'
-                                                                      ,'AM23Y' ,'5'
-                                                                      ,'AM18'  ,'0'
-                                                                      ,'AM19'  ,'1'
-                                                                      ,'AM20'  ,'2'
-                                                                      ,'AM21'  ,'3'
-                                                                      ,'AM22'  ,'4'
-                                                                      ,'AM23'  ,'5'
-                                     ,decode(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )
-                              ) education
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM25Y' ,'0'
-                                                                      ,'AM26Y' ,'1'
-                                                                      ,'AM27Y' ,'2'
-                                                                      ,'AM28Y' ,'3'
-                                                                      ,'AM29Y' ,'4'
-                                                                      ,'AM25'  ,'0'
-                                                                      ,'AM26'  ,'1'
-                                                                      ,'AM27'  ,'2'
-                                                                      ,'AM28'  ,'3'
-                                                                      ,'AM29'  ,'4'
-                                     ,decode(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )
-                              ) income
-                         /* Smoking */
-                         , case
-                                when /* 흡연력 관련 응답 내역이 있으면 1 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 52 and 58) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 46 and 48) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 7 and 21) then f.ceck_yn||f.inqy_rspn_ctn1 -- MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 7 and 21) then f.inqy_rspn_ctn1
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '1'
-                                when /* 흡연력 관련 응답 내역이 없고, 원래 안 피우면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 52 and 58) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 46 and 48) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 7 and 21) then f.ceck_yn||f.inqy_rspn_ctn1 -- MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 7 and 21) then f.inqy_rspn_ctn1
-                                                else ''
-                                           end 
-                                          ) = 0
-                                     and 
-                                     count(
-                                           case 
-                                                when f.inpc_cd||f.item_sno = 'AM59' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno = 'RR49' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno||f.ceck_yn = 'MA16Y' then f.ceck_yn
-                                                else ''
-                                           end 
-                                          ) = 1
-                                then '0'
-                                else ''
-                           end smk_ys
-                         , case
-                                when /* 흡연력 관련 응답 내역이 없고, 원래 안 피우면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 52 and 58) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 46 and 48) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 7 and 21) then f.ceck_yn||f.inqy_rspn_ctn1 -- MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 7 and 21) then f.inqy_rspn_ctn1
-                                                else ''
-                                           end 
-                                          ) = 0
-                                     and 
-                                     count(
-                                           case 
-                                                when f.inpc_cd||f.item_sno = 'AM59' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno = 'RR49' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno||f.ceck_yn = 'MA16Y' then f.ceck_yn
-                                                else ''
-                                           end 
-                                          ) = 1
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM57Y' ,'2'
-                                                                                ,'AM58Y' ,'1'--,''))  AMQ0074
-                                                                                ,'AM57'  ,'2'
-                                                                                ,'AM58'  ,'1'--,''))  AMQ0074
-                                                                                ,'RR46Y' ,'2'
-                                                                                ,'RR48Y' ,'1'--,''))                                         RRQ05
-                                                                                ,'RR46' ,'2'
-                                                                                ,'RR48' ,'1'--,''))                                         RRQ05
-                                                                                ,'MA17Y' ,'1'
-                                                                                ,'MA18Y' ,'2'--,''))             MA1Q02
-                                            ,''))
-                           end smk
-                         , max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM54'  ,f.inqy_rspn_ctn1 
-                                                                      ,'AM54Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0072
-                                                                      ,'MA110' ,f.inqy_rspn_ctn1
-                                     ,DECODE(f.inpc_cd,'RR','9999','')
-                                     )
-                              ) smk_duration
-                         , min(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM55'  ,f.inqy_rspn_ctn1 
-                                                                      ,'AM55Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0073
-                                                                      ,'RR47'  ,f.inqy_rspn_ctn1
-                                                                      ,'RR47Y' ,f.inqy_rspn_ctn1--,''))                                  RRQ0501
-                                                                      ,'MA112Y','0'
-                                                                      ,'MA113Y','1'
-                                                                      ,'MA114Y','2'
-                                                                      ,'MA115Y','3'--,''))                                               MA1Q0203
-                                     ,'')
-                              ) smk_current_amount
-                         , max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM53'  ,f.inqy_rspn_ctn1 
-                                                                      ,'AM53Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0071
-                                                                      ,'MA19'  ,f.inqy_rspn_ctn1--,''))                                  MA1Q0201
-                                     ,DECODE(f.inpc_cd,'RR','9999','')
-                                     )
-                              ) smk_start_age
-                         , max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM58'  ,f.inqy_rspn_ctn1 
-                                                                      ,'AM58Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0074
-                                                                      ,'MA117Y','0'
-                                                                      ,'MA118Y','1'
-                                                                      ,'MA119Y','2'
-                                                                      ,'MA120Y','3'
-                                                                      ,'MA121Y','4'--,''))                                               MA1Q0204
-                                     ,DECODE(f.inpc_cd,'RR','9999','')
-                                     )
-                              ) smk_end_yr
-                         , min(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA112Y',5--'M0'
-                                                                      ,'MA113Y',15--'M1'
-                                                                      ,'MA114Y',25--'M2'
-                                                                      ,'MA115Y',35--'M3'--,''))                                               MA1Q0203
-                                     ,''
-                                     )
-                              ) 
-                           /20
-                           *
-                           case 
-                                when regexp_replace(max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA110' ,f.inqy_rspn_ctn1,'')),'^-?[0-9]+((\.[0-9]+)([Ee][+-][0-9]+)?)?','') is null 
-                                then max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA110' ,f.inqy_rspn_ctn1,''))
-                                else ''
-                           end smk_packyrs
-                         /* Alcohol */
-                         , case
-                                when /* 음주 관련 응답 내역이 있으면 1 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 61 and 78) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 51 and 64) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 24 and 37) then f.ceck_yn||f.inqy_rspn_ctn1 -- MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '1'
-                                when /* 음주 관련 응답 내역이 없고, 원래 안 마시면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 61 and 78) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 51 and 64) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 24 and 37) then f.ceck_yn||f.inqy_rspn_ctn1 -- MA1 문진의 경우 CTN은 응답이 있어도 ceck_yn이 null이므로 함께 고려
-                                                else ''
-                                           end 
-                                          ) = 0
-                                     and 
-                                     count(
-                                           case 
-                                                when f.inpc_cd||f.item_sno = 'AM79' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno = 'RR65' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno||f.ceck_yn = 'MA123Y' then f.ceck_yn
-                                                else ''
-                                           end 
-                                          ) = 1
-                                then '0'
-                                else ''
-                           end alc_ys
-                         , case
-                                when /* 음주 관련 응답 내역이 없고, 원래 안 마시면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 61 and 78) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 51 and 64) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) = 0
-                                     and 
-                                     count(
-                                           case 
-                                                when f.inpc_cd||f.item_sno = 'AM79' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno = 'RR65' then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) = 1
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM77Y'  ,'2'
-                                                                                ,'AM78Y'  ,'1'--,''))  AMQ0085
-                                                                                ,'RR51Y'  ,'2'
-                                                                                ,'RR64Y'  ,'1'
-                                                                                ,'AM77'   ,'2'
-                                                                                ,'AM78'   ,'1'--,''))  AMQ0085
-                                                                                ,'RR51'   ,'2'
-                                                                                ,'RR64'   ,'1'
-                                               ,DECODE(f.inpc_cd,'MA1','9999',''))
-                                        )
-                           end alc
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM65Y'  ,'0'--,'1'
-                                                                      ,'AM66Y'  ,'1'--,'2'
-                                                                      ,'AM67Y'  ,'2'--,'3'
-                                                                      ,'AM68Y'  ,'3'--,'4'
-                                                                      ,'AM69Y'  ,'4'--,'5'
-                                                                      ,'AM70Y'  ,'5'--,'6'--,''))                                                 AMQ0083
-                                                                      ,'RR53Y'  ,'0'--,'1'
-                                                                      ,'RR54Y'  ,'1'--,'2'
-                                                                      ,'RR55Y'  ,'2'--,'3'
-                                                                      ,'RR56Y'  ,'3'--,'4'
-                                                                      ,'RR57Y'  ,'4'--,'5'
-                                                                      ,'RR58Y'  ,'5'--,'6'--,''))                                                   RRQ0601
-                                                                      ,'AM65'   ,'0'--,'1'
-                                                                      ,'AM66'   ,'1'--,'2'
-                                                                      ,'AM67'   ,'2'--,'3'
-                                                                      ,'AM68'   ,'3'--,'4'
-                                                                      ,'AM69'   ,'4'--,'5'
-                                                                      ,'AM70'   ,'5'--,'6'--,''))                                                 AMQ0083
-                                                                      ,'RR53'   ,'0'--,'1'
-                                                                      ,'RR54'   ,'1'--,'2'
-                                                                      ,'RR55'   ,'2'--,'3'
-                                                                      ,'RR56'   ,'3'--,'4'
-                                                                      ,'RR57'   ,'4'--,'5'
-                                                                      ,'RR58'   ,'5'--,'6'--,''))                                                   RRQ0601
-                                                                      ,'MA127Y' ,'0'--,'1'
-                                                                      ,'MA128Y' ,'1'--,'2'
-                                                                      ,'MA129Y' ,'2'--,'3'
-                                                                      ,'MA130Y' ,'3'--,'4'
-                                                                      ,'MA131Y' ,'4'--,'5'
-                                                                      ,'MA132Y' ,'5'--,'6'--,''))                                                 MA1Q0302
-                                     ,'')) alc_freq
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM72Y'  ,'0'--,'1'
-                                                                      ,'AM73Y'  ,'1'--,'2'
-                                                                      ,'AM74Y'  ,'2'--,'3'
-                                                                      ,'AM75Y'  ,'3'--,'4'--,''))                                                 AMQ0084
-                                                                      ,'RR60Y'  ,'0'--,'1'
-                                                                      ,'RR61Y'  ,'1'--,'2'
-                                                                      ,'RR62Y'  ,'2'--,'3'
-                                                                      ,'RR63Y'  ,'3'--,'4'--,''))                                                 RRQ0602
-                                                                      ,'AM72'   ,'0'--,'1'
-                                                                      ,'AM73'   ,'1'--,'2'
-                                                                      ,'AM74'   ,'2'--,'3'
-                                                                      ,'AM75'   ,'3'--,'4'--,''))                                                 AMQ0084
-                                                                      ,'RR60'   ,'0'--,'1'
-                                                                      ,'RR61'   ,'1'--,'2'
-                                                                      ,'RR62'   ,'2'--,'3'
-                                                                      ,'RR63'   ,'3'--,'4'--,''))                                                 RRQ0602
-                                                                      ,'MA134Y' ,'0'--,'1'
-                                                                      ,'MA135Y' ,'1'--,'2'
-                                                                      ,'MA136Y' ,'2'--,'3'
-                                                                      ,'MA137Y' ,'3'--,'4'--,''))                                                 MA1Q0303
-                                     ,'')) alc_amount_drinks
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM62'   ,f.inqy_rspn_ctn1-- ,''))                                   AMQ0081
-                                                                      ,'AM62Y'  ,f.inqy_rspn_ctn1-- ,''))                                   AMQ0081
-                                     ,DECODE(f.inpc_cd,'RR' ,'9999'
-                                                     ,'MA1','9999','')
-                                     )) alc_start_age
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM63'   ,f.inqy_rspn_ctn1 --,''))                                   AMQ0082
-                                                                      ,'AM63Y'  ,f.inqy_rspn_ctn1 --,''))                                   AMQ0082
-                                                                      ,'MA125'  ,f.inqy_rspn_ctn1 --,''))                                   MA1Q0301
-                                                                      ,'MA125Y' ,f.inqy_rspn_ctn1 --,''))                                   MA1Q0301
-                                     ,DECODE(f.inpc_cd,'RR' ,'9999','')
-                                     )) alc_duration
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM78'   ,decode(f.inqy_rspn_ctn1,'','',f.inqy_rspn_ctn1) --,''))                                   AMQ0085
-                                                                      ,'AM78Y'  ,decode(f.inqy_rspn_ctn1,'','',f.inqy_rspn_ctn1) --,''))                                   AMQ0085
-                                     ,DECODE(f.inpc_cd,'RR' ,'9999'
-                                                      ,'MA1','9999','')
-                                     )) alc_endyr
-                         , round(
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA134Y' ,14.4 --'0'--,'1'
-                                                                      ,'MA135Y' ,28.8 --'1'--,'2'
-                                                                      ,'MA136Y' ,57.6 --'2'--,'3'
-                                                                      ,'MA137Y' ,115.2--'3'--,'4'--,''))                                                 MA1Q0303
-                                     ,'')) -- alc_amount_drinks
-                           *
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA127Y' ,0.033333--'0'--,'1'
-                                                                      ,'MA128Y' ,0.083333--'1'--,'2'
-                                                                      ,'MA129Y' ,0.214286--'2'--,'3'
-                                                                      ,'MA130Y' ,0.5     --'3'--,'4'
-                                                                      ,'MA131Y' ,0.785714--'4'--,'5'
-                                                                      ,'MA132Y' ,1       --'5'--,'6'--,''))                                                 MA1Q0302
-                                     ,''))-- alc_freq
-                                ,2)
-                           alc_amount_grams
-                         /* Physical activity */
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 31 and 49) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 14 and 43) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '1'
-                                when /* 운동 관련 응답 내역이 없고, 운동을 하지 않으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 31 and 49) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 14 and 43) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) = 0
-                                     and 
-                                     count(
-                                           case 
-                                                when f.inpc_cd||f.item_sno = 'AM50' then f.inqy_rspn_cd
-                                                when f.inpc_cd||f.item_sno = 'RR44' then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) = 1
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA149Y','1'                                                                       
-                                                                      ,'MA150Y','2'                                                                       
-                                                                      ,'MA151Y','3'                                                                       
-                                                                      ,'MA152Y','0'--,''))                                                                  MA1Q05
-                                     ,DECODE(f.inpc_cd,'RR' ,'9999'
-                                                      ,'AM' ,'9999','')
-                                     )) overall_physical_activity
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM43Y'  ,'0'
-                                                                      ,'AM44Y'  ,'1'
-                                                                      ,'AM45Y'  ,'2'
-                                                                      ,'AM46Y'  ,'3'
-                                                                      ,'AM47Y'  ,'4'--,''))                                AMQ0062
-                                                                      ,'AM43'   ,'0'
-                                                                      ,'AM44'   ,'1'
-                                                                      ,'AM45'   ,'2'
-                                                                      ,'AM46'   ,'3'
-                                                                      ,'AM47'   ,'4'--,''))                                AMQ0062
-                                                                      ,'RR26Y'  ,'0'
-                                                                      ,'RR27Y'  ,'1'
-                                                                      ,'RR28Y'  ,'2'
-                                                                      ,'RR29Y'  ,'3'
-                                                                      ,'RR30Y'  ,'4'--,''))                                         RRQ0402
-                                                                      ,'RR26'   ,'0'
-                                                                      ,'RR27'   ,'1'
-                                                                      ,'RR28'   ,'2'
-                                                                      ,'RR29'   ,'3'
-                                                                      ,'RR30'   ,'4'--,''))                                         RRQ0402
-                                     ,decode(f.inpc_cd,'MA1','9999','')
-                                     )) phy_freq_2009
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM48'   ,decode(f.inqy_rspn_ctn1||f.inqy_rspn_ctn2,'','',f.inqy_rspn_ctn1||' 분 또는 '||f.inqy_rspn_ctn2||' 시간')--,'')) AMQ0063
-                                                                      ,'AM48Y'  ,decode(f.inqy_rspn_ctn1||f.inqy_rspn_ctn2,'','',f.inqy_rspn_ctn1||' 분 또는 '||f.inqy_rspn_ctn2||' 시간')--,'')) AMQ0063
-                                                                      ,'RR32Y'  ,'0'
-                                                                      ,'RR33Y'  ,'1'
-                                                                      ,'RR34Y'  ,'2'
-                                                                      ,'RR35Y'  ,'3'
-                                                                      ,'RR36Y'  ,'4'--,''))                                         RRQ0403
-                                                                      ,'RR32'   ,'0'
-                                                                      ,'RR33'   ,'1'
-                                                                      ,'RR34'   ,'2'
-                                                                      ,'RR35'   ,'3'
-                                                                      ,'RR36'   ,'4'--,''))                                         RRQ0403
-                                     ,decode(f.inpc_cd,'MA1','9999','')
-                                     )) phy_duration_2009
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA154Y' ,'0'                                                                       
-                                                                      ,'MA155Y' ,'1'                                                                       
-                                                                      ,'MA156Y' ,'2'                                                                       
-                                                                      ,'MA157Y' ,'3'--,''))                                                                  MA1Q0501
-                                     ,decode(f.inpc_cd,'AM','9999'
-                                                      ,'RR','9999','')
-                                     )) phy_freq
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA159Y' ,'0'
-                                                                      ,'MA160Y' ,'1'
-                                                                      ,'MA161Y' ,'2'
-                                                                      ,'MA162Y' ,'3'
-                                                                      ,'MA163Y' ,'4'--,''))                                                                  MA1Q0502
-                                     ,decode(f.inpc_cd,'AM','9999'
-                                                      ,'RR','9999','')
-                                     )) phy_duration
-                         , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM49'   ,f.inqy_rspn_ctn1||' 년전'--,''))                        AMQ0064
-                                                                      ,'AM49Y'  ,f.inqy_rspn_ctn1||' 년전'--,''))                        AMQ0064
-                                                                      ,'RR38Y'  ,'0'
-                                                                      ,'RR39Y'  ,'1'
-                                                                      ,'RR40Y'  ,'2'
-                                                                      ,'RR41Y'  ,'3'
-                                                                      ,'RR42Y'  ,'4'
-                                                                      ,'RR43Y'  ,'5'--,''))                                         RRQ0404
-                                                                      ,'RR38'   ,'0'
-                                                                      ,'RR39'   ,'1'
-                                                                      ,'RR40'   ,'2'
-                                                                      ,'RR41'   ,'3'
-                                                                      ,'RR42'   ,'4'
-                                                                      ,'RR43'   ,'5'--,''))                                         RRQ0404
-                                     ,DECODE(f.inpc_cd,'MA1' ,'9999','')
-                                     )) phy_startyr
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM33Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM33'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR16Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR16'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_walking
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM34Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM34'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR17Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR17'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_jogging
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM35Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM35'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR18Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR18'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_TENNIS
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM36Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM36'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR19Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR19'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_GOLF
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM37Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM37'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR20Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR20'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_SWIMMING
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM38Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM38'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR21Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR21'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_CLIMBING
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM39Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM39'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR22Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR22'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_AEROBIC
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM40Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM40'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR23Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR23'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_FITNESS
-                         , case
-                                when /* 운동 관련 응답 내역이 있으면 1 */
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM41Y' ,'1'--,''))                                AMQ00611
-                                                                                ,'AM41'  ,'1'--,''))                                AMQ00611
-                                                                                ,'RR24Y' ,'1'--,''))                                         RRQ040101
-                                                                                ,'RR24'  ,'1'--,''))                                         RRQ040101
-                                               ,''
-                                               )) is not null
-                                then '1'
-                                when /* 타 운동 종류 관련 응답이 있으면 0 */
-                                     count(
-                                           case 
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 33 and 41) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 16 and 24) then f.inqy_rspn_cd
-                                                else ''
-                                           end 
-                                          ) > 0
-                                then '0'
-                                else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
-                           end phy_OTHER
-                         , case
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                     or
-                                     MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM81Y','1'
-                                                                                ,'RR67Y','1'
-                                                                                ,'AM81' ,'1'
-                                                                                ,'RR67' ,'1','')) = '1'
-                                then '1'
-                                else MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn
-                                                                              ,'AM90Y' ,'0'
-                                                                              ,'AM91Y' ,'2'
-                                                                      ,'RR75Y','0'
-                                                                      ,'RR76Y','2'
-                                                                              ,'AM90'  ,'0'
-                                                                              ,'AM91'  ,'2'
-                                                                      ,'RR75' ,'0'
-                                                                      ,'RR76' ,'2'
-                                                                              ,decode(f.inpc_cd,'MA1','9999','')))
-                           end  allergy
-                         , case
-                                when 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM83Y' ,'1'
-                                                                      ,'RR69Y' ,'1'
-                                                                      ,'AM83'  ,'1'
-                                                                      ,'RR69'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999','')) 
-                           end allergy_penicillin
-                         , case
-                                when 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM84Y' ,'1'
-                                                                      ,'RR70Y' ,'1'
-                                                                      ,'AM84'  ,'1'
-                                                                      ,'RR70'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999','')) 
-                           end allergy_sulfa
-                         , case
-                                when 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM85Y' ,'1'
-                                                                      ,'RR71Y' ,'1'
-                                                                      ,'AM85'  ,'1'
-                                                                      ,'RR71'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999','')) 
-                           end allergy_contrast_agent
-                         , case
-                                when 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM86Y' ,'1'
-                                                                      ,'RR72Y' ,'1'
-                                                                      ,'AM86'  ,'1'
-                                                                      ,'RR72'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999','')) 
-                           end allergy_local_anesthetic
-                         , case
-                                when 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM87Y' ,'1'
-                                                                      ,'RR73Y' ,'1'
-                                                                      ,'AM87'  ,'1'
-                                                                      ,'RR73'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999','')) 
-                           end allergy_aspirin
-                         , case
-                                when 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM88Y' ,'1'
-                                                                      ,'RR74Y' ,'1'
-                                                                      ,'AM88'  ,'1'
-                                                                      ,'RR74'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999','')) 
-                           end allergy_other
-                         , case
-                                when 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM89Y' ,'1'
-                                                                      ,'AM89'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 81 and 89) then f.inqy_rspn_cd
-                                                when f.inpc_cd = 'RR' and (f.item_sno between 67 and 74) then f.inqy_rspn_cd
-                                                else ''
-                                                end
-                                          ) > 0
-                                then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999','')) 
-                           end allergy_unknown
-                         , case
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 43 and 47) then f.ceck_yn
-                                                else ''
-                                                end
-                                          ) > 0
-                                     or
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA139Y','1','')) = '1'
-                           then '1' 
-                           else 
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA140Y','0'
-                                                                      ,'MA141Y','2'
-                                                                      ,decode(f.inpc_cd,'RR' ,'9999'
-                                                                                       ,'AM' ,'9999',''))) 
-                           end adverse_med
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA144Y','1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 43 and 47) then f.ceck_yn
-                                                else ''
-                                                end
-                                          ) > 0
-                                     or
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA139Y','1','')) = '1'
-                           then '0' 
-                           else max(decode(f.inpc_cd,'AM','9999'
-                                                    ,'RR','9999',''))
-                           end adverse_med_antibiotics
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA145Y','1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 43 and 47) then f.ceck_yn
-                                                else ''
-                                                end
-                                          ) > 0
-                                     or
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA139Y','1','')) = '1'
-                           then '0' 
-                           else max(decode(f.inpc_cd,'AM','9999'
-                                                    ,'RR','9999',''))
-                           end adverse_med_contrast_agent
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA146Y','1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 43 and 47) then f.ceck_yn
-                                                else ''
-                                                end
-                                          ) > 0
-                                     or
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA139Y','1','')) = '1'
-                           then '0' 
-                           else max(decode(f.inpc_cd,'AM','9999'
-                                                    ,'RR','9999',''))
-                           end adverse_med_local_anesthetic
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA143Y','1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 43 and 47) then f.ceck_yn
-                                                else ''
-                                                end
-                                          ) > 0
-                                     or
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA139Y','1','')) = '1'
-                           then '0' 
-                           else max(decode(f.inpc_cd,'AM','9999'
-                                                    ,'RR','9999',''))
-                           end adverse_med_aspirin_painkiller
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA147Y','1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'MA1' and (f.item_sno between 43 and 47) then f.ceck_yn
-                                                else ''
-                                                end
-                                          ) > 0
-                                     or
-                           MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA139Y','1','')) = '1'
-                           then '0' 
-                           else max(decode(f.inpc_cd,'AM','9999'
-                                                    ,'RR','9999',''))
-                           end adverse_med_other
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM93Y' ,'1'
-                                                                                ,'AM93'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_stomach
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM94Y' ,'1'
-                                                                                ,'AM94'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_gallbladder
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM95Y' ,'1'
-                                                                                ,'AM95'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_colon
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM96Y' ,'1'
-                                                                                ,'AM96'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_appendix
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM97Y' ,'1'
-                                                                                ,'AM97'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_thyroid
-                         , case
-                                when f.inpc_cd in ('RR','MA1') then '9999'
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM98Y' ,'1'
-                                                                                ,'AM98'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else ''
-                           end surgery_uterus
-                         , case
-                                when f.inpc_cd in ('RR','MA1') then '9999'
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM99Y' ,'1'
-                                                                                ,'AM99'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else ''
-                           end surgery_ovary
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM100Y' ,'1'
-                                                                                ,'AM100'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_breast
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM101Y' ,'1'
-                                                                                ,'AM101'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_kidney
-                         , case
-                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM102Y' ,'1'
-                                                                                ,'AM102'  ,'1','')) = '1' then '1'
-                                when count(
-                                           case
-                                                when f.inpc_cd = 'AM' and (f.item_sno between 93 and 102) then f.inqy_rspn_cd
-                                                else ''
-                                           end     
-                                          ) > 0 then '0'
-                                else max(decode(f.inpc_cd,'MA1','9999'
-                                                         ,'RR' ,'9999',''))
-                           end surgery_other
-                      from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마  a
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마  b
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마  f
-                         , 스키마.3E3C23302E333E3C28@SMISR_스키마  g
-                     where 
-                           a.ordr_prrn_ymd between to_date('20190301','yyyymmdd') and to_date('20190331','yyyymmdd')
-                       and a.ordr_ymd is not null
-                       and a.cncl_dt is null
-                       and b.ptno = a.ptno
-                       and f.ptno = a.ptno
-                       and f.ordr_prrn_ymd = a.ordr_prrn_ymd
-                       and f.inpc_cd in ('AM','RR','MA1')
-                       AND (-- AM, RR의 경우는 응답한 것만 저장되었으므로, 모두 범위에 포함
-                                      (f.inpc_cd = 'AM'  and f.item_sno between 1 and 500)
-                                   or (f.inpc_cd = 'RR'  and f.item_sno between 1 and  300)
-                                   OR (f.inpc_cd = 'MA1' and f.item_sno between 1 and  64)
-                           )
-                       and f.rprs_apnt_no = a.rprs_apnt_no
-                       and f.qstn_cd1 = g.inqy_cd(+)
-                       and a.ptno not in (
-                                          &not_in_ptno
-                                         )
-                     group by f.rprs_apnt_no
-                         , F.PTNO
-                         , f.ordr_prrn_ymd
-                         , f.inpc_cd
-                         , b.brrn 
-                   ) a
-                       
-           )
-                
-            loop
-            begin   -- 데이터 insert
-                          insert /*+ append */
-                            into 스키마.1543294D47144D302E333E0E28
-                                 (
-                                   RPRS_APNT_NO
-                                 , PTNO
-                                 , ORDR_PRRN_YMD
-                                 , QUESTION_TYPE
-                                 , FOREIGN
-                                 , EXAM_MOTIVE
-                                 , EXAM
-                                 , EXAM_FIRST_AGE
-                                 , EXAM_MOST_RECENT_YY
-                                 , EXAM_MOST_RECENT_MM
-                                 , EXAM_FREQ_YR
-                                 , EXAM_PLACE
-                                 , MARITAL_STATUS
-                                 , EDUCATION
-                                 , INCOME
-                                 , SMK_YS
-                                 , SMK
-                                 , SMK_DURATION
-                                 , SMK_CURRENT_AMOUNT
-                                 , SMK_START_AGE
-                                 , SMK_ENDYR
-                                 , SMK_PACKYRS
-                                 , ALC_YS
-                                 , ALC
-                                 , ALC_FREQ
-                                 , ALC_AMOUNT_DRINKS
-                                 , ALC_START_AGE
-                                 , ALC_DURATION
-                                 , ALC_ENDYR
-                                 , ALC_AMOUNT_GRAMS
-                                 , PHY
-                                 , OVERALL_PHYSICAL_ACTIVITY
-                                 , PHY_FREQ_2009
-                                 , PHY_DURATION_2009
-                                 , PHY_FREQ
-                                 , PHY_DURATION
-                                 , PHY_STARTYR
-                                 , PHY_WALKING
-                                 , PHY_JOGGING
-                                 , PHY_TENNIS
-                                 , PHY_GOLF
-                                 , PHY_SWIMMING
-                                 , PHY_CLIMBING
-                                 , PHY_AEROBIC
-                                 , PHY_FITNESS
-                                 , PHY_OTHER
-                                 , ALLERGY
-                                 , ALLERGY_PENICILLIN
-                                 , ALLERGY_SULFA
-                                 , ALLERGY_CONTRAST_AGENT
-                                 , ALLERGY_LOCAL_ANESTHETIC
-                                 , ALLERGY_ASPIRIN
-                                 , ALLERGY_OTHER
-                                 , ALLERGY_UNKNOWN
-                                 , ADVERSE_MED
-                                 , ADVERSE_MED_ANTIBIOTICS
-                                 , ADVERSE_MED_CONTRAST_AGENT
-                                 , ADVERSE_MED_LOCAL_ANESTHETIC
-                                 , ADVERSE_MED_ASPIRIN_PAINKILLER
-                                 , ADVERSE_MED_OTHER
-                                 , SURGERY_STOMACH
-                                 , SURGERY_GALLBLADDER
-                                 , SURGERY_COLON
-                                 , SURGERY_APPENDIX
-                                 , SURGERY_THYROID
-                                 , SURGERY_UTERUS
-                                 , SURGERY_OVARY
-                                 , SURGERY_BREAST
-                                 , SURGERY_KIDNEY
-                                 , SURGERY_OTHER
-                                 , UPDT_VER
-                                 , RGST_DT
-                                 , LAST_UPDT_DT
-                                 )
-                           values(
-                                   drh."1"
-                                 , drh."2"
-                                 , drh."3"
-                                 , drh."4"
-                                 , drh."5"
-                                 , drh."6"
-                                 , drh."7"
-                                 , drh."8"
-                                 , drh."9"
-                                 , drh."10"
-                                 , drh."11"
-                                 , drh."12"
-                                 , drh."13"
-                                 , drh."14"
-                                 , drh."15"
-                                 , drh."16"
-                                 , drh."17"
-                                 , drh."18"
-                                 , drh."19"
-                                 , drh."20"
-                                 , drh."21"
-                                 , drh."22"
-                                 , drh."23"
-                                 , drh."24"
-                                 , drh."25"
-                                 , drh."26"
-                                 , drh."27"
-                                 , drh."28"
-                                 , drh."29"
-                                 , drh."30"
-                                 , drh."31"
-                                 , drh."32"
-                                 , drh."33"
-                                 , drh."34"
-                                 , drh."35"
-                                 , drh."36"
-                                 , drh."37"
-                                 , drh."38"
-                                 , drh."39"
-                                 , drh."40"
-                                 , drh."41"
-                                 , drh."42"
-                                 , drh."43"
-                                 , drh."44"
-                                 , drh."45"
-                                 , drh."46"
-                                 , drh."47"
-                                 , drh."48"
-                                 , drh."49"
-                                 , drh."50"
-                                 , drh."51"
-                                 , drh."52"
-                                 , drh."53"
-                                 , drh."54"
-                                 , drh."55"
-                                 , drh."56"
-                                 , drh."57"
-                                 , drh."58"
-                                 , drh."59"
-                                 , drh."60"
-                                 , drh."61"
-                                 , drh."62"
-                                 , drh."63"
-                                 , drh."64"
-                                 , drh."65"
-                                 , drh."66"
-                                 , drh."67"
-                                 , drh."68"
-                                 , drh."69"
-                                 , drh."70"
-                                 , drh.UPDT_VER
-                                 , drh.RGST_DT
-                                 , drh.LAST_UPDT_DT
-                                 )
-                                 ;
-                  
-                         commit;
-                       
-                       incnt := incnt + 1;
-                  
-                       exception
-                       when others then
-                          rollback;
-                          errcnt := errcnt + 1;
-            
-            end;
-            end loop;
-       
-:var_msg2  := 'insert '  || to_char(incnt)    || ' 건';
 :var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
    
 end ;
