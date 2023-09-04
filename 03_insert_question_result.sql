@@ -1,4 +1,4 @@
--- 문진 정보 전체 데이터 이관 실행 script
+-- 문진 정보 전체 데이터 이관 실행 script, 날짜와 not_in_ptno를 직접 입력해 실행하면 됨. 
 -- 문진 기본정보 insert, 문진응답자 전체
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
@@ -29,10 +29,10 @@ for drh in (
                          , f.ordr_prrn_ymd
                          , f.inpc_cd
                          , decode(substr(b.brrn,1,1),'5','1','6','1','7','1','8','1','0') foreign
-                      from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마  a
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마  b
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마  f
-                         , 스키마.3E3C23302E333E3C28@SMISR_스키마  g
+                      from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마  a
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마  b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마  f
+                         , 스키마.3E3C23302E333E3C28@DAWNR_스키마  g
                      where 
                            a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
@@ -98,8 +98,8 @@ for drh in (
             end;
             end loop;
        
-:var_msg2  := 'insert '  || to_char(incnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
+:var_msg2  := '기본정보: insert '  || to_char(incnt)    || ' 건';
+:var_msg3  := '기본정보: error '   || to_char(errcnt)   || ' 건';
    
 end ;
 /
@@ -108,6 +108,8 @@ print var_msg3
 spool off;
    
 -- 문진 정보 update, 건진동기, 생활습관, 알러지, 약물이상반응, 수술력
+-- 20210524 수정버전. smk_ednyr의 값은 smk가 1인 경우만 표시함.
+-- 20210526 수정버전. 나이 값 숫자 앞에 '0'이 있으면 삭제. Smk_duration, smk_start_age, alc_duration
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
 variable var_msg2 char(40);
@@ -140,7 +142,7 @@ for drh in (
                  , a.SMK_DURATION                    as "18"
                  , a.SMK_CURRENT_AMOUNT              as "19"
                  , a.SMK_START_AGE                   as "20"
-                 , a.SMK_END_YR                      as "21"
+                 , a.SMK_ENDYR                       as "21"
                  , a.SMK_PACKYRS                     as "22"
                  , a.ALC_YS                          as "23"
                  , a.ALC                             as "24"
@@ -328,7 +330,7 @@ for drh in (
                                                 when f.inpc_cd||f.item_sno||f.ceck_yn = 'MA16Y' then f.ceck_yn
                                                 else ''
                                            end 
-                                          ) = 1
+                                          ) > 0
                                 then '0'
                                 else ''
                            end smk_ys
@@ -351,7 +353,7 @@ for drh in (
                                                 when f.inpc_cd||f.item_sno||f.ceck_yn = 'MA16Y' then f.ceck_yn
                                                 else ''
                                            end 
-                                          ) = 1
+                                          ) > 0
                                 then '0'
                                 else MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM57Y' ,'2'
                                                                                 ,'AM58Y' ,'1'--,''))  AMQ0074
@@ -367,7 +369,7 @@ for drh in (
                            end smk
                          , max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM54'  ,f.inqy_rspn_ctn1 
                                                                       ,'AM54Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0072
-                                                                      ,'MA110' ,f.inqy_rspn_ctn1
+                                                                      ,'MA110' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1) -- 데이터 첫 자리 값이 '0'으로 시작하면 빼기
                                      ,DECODE(f.inpc_cd,'RR','9999','')
                                      )
                               ) smk_duration
@@ -383,20 +385,44 @@ for drh in (
                               ) smk_current_amount
                          , max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM53'  ,f.inqy_rspn_ctn1 
                                                                       ,'AM53Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0071
-                                                                      ,'MA19'  ,f.inqy_rspn_ctn1--,''))                                  MA1Q0201
+                                                                      ,'MA19' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1)--,''))                                  MA1Q0201
                                      ,DECODE(f.inpc_cd,'RR','9999','')
                                      )
                               ) smk_start_age
-                         , max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM58'  ,f.inqy_rspn_ctn1 
-                                                                      ,'AM58Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0074
-                                                                      ,'MA117Y','0'
-                                                                      ,'MA118Y','1'
-                                                                      ,'MA119Y','2'
-                                                                      ,'MA120Y','3'
-                                                                      ,'MA121Y','4'--,''))                                               MA1Q0204
-                                     ,DECODE(f.inpc_cd,'RR','9999','')
-                                     )
-                              ) smk_end_yr
+                        --  , max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM58'  ,f.inqy_rspn_ctn1 
+                        --                                               ,'AM58Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0074
+                        --                                               ,'MA117Y','0'
+                        --                                               ,'MA118Y','1'
+                        --                                               ,'MA119Y','2'
+                        --                                               ,'MA120Y','3'
+                        --                                               ,'MA121Y','4'--,''))                                               MA1Q0204
+                        --              ,DECODE(f.inpc_cd,'RR','9999','')
+                        --              )
+                        --       ) smk_end_yr
+                         , case -- smk가 1인 경우만 endyr을 표시함. 20210524 수정버전.
+                                when MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM57Y' ,'2'
+                                                                                ,'AM58Y' ,'1'--,''))  AMQ0074
+                                                                                ,'AM57'  ,'2'
+                                                                                ,'AM58'  ,'1'--,''))  AMQ0074
+                                                                                ,'RR46Y' ,'2'
+                                                                                ,'RR48Y' ,'1'--,''))                                         RRQ05
+                                                                                ,'RR46' ,'2'
+                                                                                ,'RR48' ,'1'--,''))                                         RRQ05
+                                                                                ,'MA17Y' ,'1'
+                                                                                ,'MA18Y' ,'2'--,''))             MA1Q02
+                                            ,'')) = '2'
+                                then ''
+                                else max(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM58'  ,f.inqy_rspn_ctn1 
+                                                                                ,'AM58Y' ,f.inqy_rspn_ctn1-- ,''))                                 AMQ0074
+                                                                                ,'MA117Y','0'
+                                                                                ,'MA118Y','1'
+                                                                                ,'MA119Y','2'
+                                                                                ,'MA120Y','3'
+                                                                                ,'MA121Y','4'--,''))                                               MA1Q0204
+                                               ,DECODE(f.inpc_cd,'RR','9999','')
+                                               )
+                                        ) 
+                           end smk_endyr
                          , min(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA112Y',5--'M0'
                                                                       ,'MA113Y',15--'M1'
                                                                       ,'MA114Y',25--'M2'
@@ -440,7 +466,7 @@ for drh in (
                                                 when f.inpc_cd||f.item_sno||f.ceck_yn = 'MA123Y' then f.ceck_yn
                                                 else ''
                                            end 
-                                          ) = 1
+                                          ) > 0
                                 then '0'
                                 else ''
                            end alc_ys
@@ -460,7 +486,7 @@ for drh in (
                                                 when f.inpc_cd||f.item_sno = 'RR65' then f.inqy_rspn_cd
                                                 else ''
                                            end 
-                                          ) = 1
+                                          ) > 0
                                 then '0'
                                 else MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM77Y'  ,'2'
                                                                                 ,'AM78Y'  ,'1'--,''))  AMQ0085
@@ -532,8 +558,8 @@ for drh in (
                                      )) alc_start_age
                          , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM63'   ,f.inqy_rspn_ctn1 --,''))                                   AMQ0082
                                                                       ,'AM63Y'  ,f.inqy_rspn_ctn1 --,''))                                   AMQ0082
-                                                                      ,'MA125'  ,f.inqy_rspn_ctn1 --,''))                                   MA1Q0301
-                                                                      ,'MA125Y' ,f.inqy_rspn_ctn1 --,''))                                   MA1Q0301
+                                                                      ,'MA125'  ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1) --,''))                                   MA1Q0301
+                                                                      ,'MA125Y' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1) --,''))                                   MA1Q0301
                                      ,DECODE(f.inpc_cd,'RR' ,'9999','')
                                      )) alc_duration
                          , MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM78'   ,decode(f.inqy_rspn_ctn1,'','',f.inqy_rspn_ctn1) --,''))                                   AMQ0085
@@ -583,7 +609,7 @@ for drh in (
                                                 when f.inpc_cd||f.item_sno = 'RR44' then f.inqy_rspn_cd
                                                 else ''
                                            end 
-                                          ) = 1
+                                          ) > 0
                                 then '0'
                                 else MAX(DECODE(f.inpc_cd,'MA1','9999',''))
                            end phy
@@ -1182,10 +1208,10 @@ for drh in (
                                 else max(decode(f.inpc_cd,'MA1','9999'
                                                          ,'RR' ,'9999',''))
                            end surgery_other
-                      from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마  a
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마  b
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마  f
-                         , 스키마.3E3C23302E333E3C28@SMISR_스키마  g
+                      from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마  a
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마  b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마  f
+                         , 스키마.3E3C23302E333E3C28@DAWNR_스키마  g
                      where 
                            a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
@@ -1218,7 +1244,7 @@ for drh in (
                           update /*+ append */
                                  스키마.1543294D47144D302E333E0E28 a
                              set 
-                                 a.EXAM_MOTIVE                           = drh."6" 
+                                   a.EXAM_MOTIVE                           = drh."6" 
                                  , a.EXAM                                  = drh."7" 
                                  , a.EXAM_FIRST_AGE                        = drh."8" 
                                  , a.EXAM_MOST_RECENT_YY                   = drh."9" 
@@ -1301,8 +1327,8 @@ for drh in (
             end;
             end loop;
        
-:var_msg2  := 'update '  || to_char(upcnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
+:var_msg2  := '생활습관: update '  || to_char(upcnt)    || ' 건';
+:var_msg3  := '생활습관: error '   || to_char(errcnt)   || ' 건';
    
 end ;
 /
@@ -1310,7 +1336,7 @@ print var_msg2
 print var_msg3
 spool off;
      
--- 문진 정보 update, 질병력
+-- 문진 정보 update, 질병력, 20210524 수정버전. 나이값 앞에 '0' 제거
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
 variable var_msg2 char(40);
@@ -1539,7 +1565,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM104Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM104' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1157',f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1157',decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) tuberculosis_age_diag
                     /* 고혈압 */
@@ -1571,7 +1597,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM106Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM106' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA170' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA170' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) hypertension_age_diag
                     /* 고지혈증 */
@@ -1603,7 +1629,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM107Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM107' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA180' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA180' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) hyperlipidemia_age_diag
                     /* 뇌졸중/중풍 */
@@ -1647,7 +1673,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM108Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM108' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1101',f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1101',decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) stroke_age_diag
                     /* 당뇨병 */
@@ -1679,7 +1705,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM109Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM109' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA175' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA175' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) diabetes_age_diag
                     /* 위/십이지장 궤양 */
@@ -1722,7 +1748,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM111Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM111' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1128' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1128',decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) ga_duodenal_ulcer_age_diag
                     /* 대장용종(폴립) */
@@ -1765,7 +1791,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM114Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM114' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1140' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1140',decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) colon_polyp_age_diag
                     /* 지방간 */
@@ -1797,7 +1823,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM118Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM118' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1121' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1121',decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) fatty_liver_age_diag
                     /* 갑상선 결절 */
@@ -1839,7 +1865,7 @@ for drh in (
                                  ) trt_thyroid_nodules_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1178' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1178' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) thyroid_nodules_age_diag
                     /* 유방양성종양 */
@@ -1882,7 +1908,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM123Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM123' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1164' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1164',decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) bbt_age_diag
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn||f.inqy_rspn_ctn1,'AM123YY','1','AM123YN','0',''))
@@ -1930,7 +1956,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM126Y',f.inqy_rspn_ctn2 
                                                                                              ,'AM126' ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1220' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1220',decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) disc_age_diag
                     /* 위염 */
@@ -2148,7 +2174,7 @@ for drh in (
                                  ) status_hbv
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1106' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1106' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) hbv_age_diag
                     /* C형 간염 */
@@ -2179,7 +2205,7 @@ for drh in (
                                  ) status_hcv
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1111' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1111' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) hcv_age_diag
                     /* 간경변 */
@@ -2210,7 +2236,7 @@ for drh in (
                                  ) status_cirrhosis
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1116' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1116' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cirrhosis_age_diag
                     /* 헬리코박터 */
@@ -2241,7 +2267,7 @@ for drh in (
                                  ) status_helico_pylori
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1133' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1133' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) helico_pylori_age_diag
                     /* 만성폐쇄성 폐질환 */
@@ -2272,7 +2298,7 @@ for drh in (
                                  ) status_history_copd
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1145' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1145' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) copd_age_diag
                     /* 관절염 */
@@ -2314,7 +2340,7 @@ for drh in (
                                  ) trt_arthritis_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',max(DECODE(f.qstn_cd1||f.ceck_yn,'6-1-28-6' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',max(DECODE(f.qstn_cd1||f.ceck_yn,'6-1-28-6' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) arthritis_age_diag
                     /* 백내장 */
@@ -2356,7 +2382,7 @@ for drh in (
                                  ) trt_cataract_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1206' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1206' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cataract_age_diag
                     /* 녹내장 */
@@ -2398,7 +2424,7 @@ for drh in (
                                  ) trt_glaucoma_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1213' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1213' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) glaucoma_age_diag
                     /* 천식/알러지 */
@@ -2450,7 +2476,7 @@ for drh in (
                                  ) status_asthma
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1150' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1150' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) asthma_age_diag
                     /* 협심증/심근경색 */
@@ -2513,7 +2539,7 @@ for drh in (
                                  ) trt_angina_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA187' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA187' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) angina_age_diag
                     /* 심근경색 */
@@ -2555,7 +2581,7 @@ for drh in (
                                  ) trt_mi_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA194' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA194' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) mi_age_diag
                     /* 신장 및 방광질환 */
@@ -2597,7 +2623,7 @@ for drh in (
                                  ) trt_kidney_urinary_dis_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1185' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1185' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) kidney_urinary_dis_age_diag
                     /* 신장질환 */
@@ -2702,7 +2728,7 @@ for drh in (
                                  ) trt_bph_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',max(DECODE(f.qstn_cd1||f.ceck_yn,'6-1-27-6' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',max(DECODE(f.qstn_cd1||f.ceck_yn,'6-1-27-6' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) bph_age_diag
                     /* 갑상선 기능 저하증 및 항진증 */
@@ -2744,7 +2770,7 @@ for drh in (
                                  ) trt_thyroid_dis2_op
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1171' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1171' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) thyroid_dis2_age_diag
                     /* 기타질환 */
@@ -2787,7 +2813,7 @@ for drh in (
                          , decode(f.inpc_cd,'AM' ,MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'AM129Y' ,f.inqy_rspn_ctn2 
                                                                                              ,'AM129'  ,f.inqy_rspn_ctn2,''))
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1227' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1227' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) other_age_diag
                       from (-- 질병력 전체값 고려, MA1 문진의 '수술/시술여부: 아니오'는 고려대상에서 제외.
@@ -2831,14 +2857,9 @@ for drh in (
                                         then '1'
                                         else ''
                                    end history_comorbidity 
-                              from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마 b
-                                 , 스키마.3E3C23302E333E0E28@SMISR_스키마 a
+                              from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마 b
+                                 , 스키마.3E3C23302E333E0E28@DAWNR_스키마 a
                              where 
-                    --               b.ptno IN ('01982036' -- AM문진  응답자
-                    --                         ,'00477937' -- RR문진  응답자
-                    --                         ,'04032026' -- MA1문진 응답자
-                    --                         )
-                    --           and 
                                    b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
@@ -2858,8 +2879,8 @@ for drh in (
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
                            ) a
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마 b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마 f
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마 b
                      where f.ptno = a.ptno
                        and f.ordr_prrn_ymd = a.ordr_prrn_ymd
                        and f.inpc_cd = a.inpc_cd
@@ -3066,8 +3087,8 @@ for drh in (
             end;
             end loop;
        
-:var_msg2  := 'update '  || to_char(upcnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
+:var_msg2  := '질병력: update '  || to_char(upcnt)    || ' 건';
+:var_msg3  := '질병력: error '   || to_char(errcnt)   || ' 건';
    
 end ;
 /
@@ -3075,7 +3096,7 @@ print var_msg2
 print var_msg3
 spool off;
      
--- 문진 정보 update, 암병력                                                                   
+-- 문진 정보 update, 암병력, 20210524 수정버전. 나이값 앞에 '0'제거
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환                        
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함                             
 variable var_msg2 char(40);                                                           
@@ -3213,7 +3234,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_stomach
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1303' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1303' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_stomach_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3276,7 +3297,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_lung
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1309' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1309' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_lung_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3339,7 +3360,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_liver
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1315' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1315' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_liver_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3402,7 +3423,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_colorectal
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1321' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1321' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_colorectal_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3465,7 +3486,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_breast
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1327' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1327' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_breast_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3528,7 +3549,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_cervix
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1333' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1333' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_cervix_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3591,7 +3612,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_thyroid
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1339' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1339' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_thyroid_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3654,7 +3675,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_bladder
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1345' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1345' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_bladder_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3717,7 +3738,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_esophagus
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1351' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1351' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_esophagus_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3780,7 +3801,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_gb_biliary
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1357' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1357' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_gb_biliary_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3843,7 +3864,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_ovary
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1363' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1363' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_ovary_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3906,7 +3927,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_prostate
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1369' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1369' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_prostate_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -3969,7 +3990,7 @@ for drh in (-- 데이터 select
                                  )  history_cancer_pancreas
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1375' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1375' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_pancreas_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -4033,7 +4054,7 @@ for drh in (-- 데이터 select
                                  ) history_cancer_other
                          , decode(f.inpc_cd,'AM' ,'9999'
                                            ,'RR' ,'9999'
-                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1381' ,f.inqy_rspn_ctn1,''))
+                                           ,'MA1',MAX(DECODE(f.inpc_cd||f.item_sno||f.ceck_yn,'MA1381' ,decode(substr(f.inqy_rspn_ctn1,1,1),'0',substr(f.inqy_rspn_ctn1,2),f.inqy_rspn_ctn1),''))
                                  ,''
                                  ) cancer_other_age_diag
                          , decode(f.inpc_cd,'AM' ,'9999'
@@ -4132,14 +4153,9 @@ for drh in (-- 데이터 select
                                         then '0'
                                         else max(decode(a.inpc_cd,'RR','9999',''))
                                    end history_cancer
-                              from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마 b
-                                 , 스키마.3E3C23302E333E0E28@SMISR_스키마 a
+                              from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마 b
+                                 , 스키마.3E3C23302E333E0E28@DAWNR_스키마 a
                              where 
-                    --               b.ptno IN ('01982036' -- AM문진  응답자
-                    --                         ,'00477937' -- RR문진  응답자
-                    --                         ,'04032026' -- MA1문진 응답자
-                    --                         )
-                    --           and 
                                    b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
@@ -4159,8 +4175,8 @@ for drh in (-- 데이터 select
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
                            ) a
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마 b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마 f
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마 b
                      where a.ptno = f.ptno
                        and a.ordr_prrn_ymd = f.ordr_prrn_ymd
                        and a.inpc_cd = f.inpc_cd
@@ -4302,8 +4318,8 @@ for drh in (-- 데이터 select
             end;                                                                      
             end loop;                                                                 
                                                                                       
-:var_msg2  := 'update '  || to_char(upcnt)    || ' 건';                               
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';                               
+:var_msg2  := '암병력: update '  || to_char(upcnt)    || ' 건';                               
+:var_msg3  := '암병력: error '   || to_char(errcnt)   || ' 건';                               
                                                                                       
 end ;                                                                                 
 /                                                                                     
@@ -4973,14 +4989,9 @@ for drh in (
                                         then '1'
                                         else ''
                                    end med
-                              from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마 b
-                                 , 스키마.3E3C23302E333E0E28@SMISR_스키마 a
+                              from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마 b
+                                 , 스키마.3E3C23302E333E0E28@DAWNR_스키마 a
                              where 
-                    --               b.ptno IN ('01982036' -- AM문진  응답자
-                    --                         ,'00477937' -- RR문진  응답자
-                    --                         ,'04032026' -- MA1문진 응답자
-                    --                         )
-                    --           and 
                                    b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
@@ -5000,8 +5011,8 @@ for drh in (
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
                            ) a
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마 b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마 f
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마 b
                      where f.ptno = a.ptno
                        and f.ordr_prrn_ymd = a.ordr_prrn_ymd
                        and f.inpc_cd = a.inpc_cd
@@ -5112,8 +5123,8 @@ for drh in (
             end;
             end loop;
        
-:var_msg2  := 'update '  || to_char(upcnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
+:var_msg2  := '약복용력: update '  || to_char(upcnt)    || ' 건';
+:var_msg3  := '약복용력: error '   || to_char(errcnt)   || ' 건';
    
 end ;
 /
@@ -7024,14 +7035,9 @@ for drh in (-- 데이터 select
                                         then '1'
                                    else max(decode(a.inpc_cd,'RR','9999',''))
                                    end family
-                              from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마 b
-                                 , 스키마.3E3C23302E333E0E28@SMISR_스키마 a
+                              from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마 b
+                                 , 스키마.3E3C23302E333E0E28@DAWNR_스키마 a
                              where 
-                    --               b.ptno IN ('01982036' -- AM문진  응답자
-                    --                         ,'00477937' -- RR문진  응답자
-                    --                         ,'04032026' -- MA1문진 응답자
-                    --                         )
-                    --           and 
                                    b.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                                and b.ordr_ymd is not null
                                and b.cncl_dt is null
@@ -7051,8 +7057,8 @@ for drh in (-- 데이터 select
                                  , a.ordr_prrn_ymd
                                  , a.inpc_cd
                            ) a
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마 b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마 f
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마 b
                      where f.ptno = a.ptno
                        and f.ordr_prrn_ymd = a.ordr_prrn_ymd
                        and f.inpc_cd = a.inpc_cd
@@ -7320,8 +7326,8 @@ for drh in (-- 데이터 select
             end;
             end loop;
        
-:var_msg2  := 'update '  || to_char(upcnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
+:var_msg2  := '가족력: update '  || to_char(upcnt)    || ' 건';
+:var_msg3  := '가족력: error '   || to_char(errcnt)   || ' 건';
    
 end ;
 /
@@ -7330,6 +7336,7 @@ print var_msg3
 spool off;
      
 -- 문진 정보 update, 남성, 여성, 스트레스
+-- 20210526 수정버전. 스트레스 총점 계산 카테고리의 SEQ 오타수정.
 -- 변수 길이가 길다는 에러메세지 때문에 변수를 숫자정보로 치환
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
 variable var_msg2 char(40);
@@ -8388,7 +8395,7 @@ for drh in (
                                                       case 
                                                            when f.inpc_cd = 'AM'  and item_sno between 322 and 325 then f.ceck_yn--               stress_q4
                                                            when f.inpc_cd = 'AM'  and item_sno between 337 and 340 then f.ceck_yn--               stress_q7
-                                                           when f.inpc_cd = 'MA1' and item_sno between 828 and 381 then f.ceck_yn--               stress_q4
+                                                           when f.inpc_cd = 'MA1' and item_sno between 828 and 831 then f.ceck_yn--               stress_q4. 스트레스 총점 계산 카테고리의 SEQ 오타수정. 이전에는 828 and 381이었음;;;
                                                            when f.inpc_cd = 'MA1' and item_sno between 843 and 846 then f.ceck_yn--               stress_q7
                                                            else ''
                                                       end
@@ -8638,10 +8645,10 @@ for drh in (
                                                          ) 
                                            )
                            end STRESS_score
-                      from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마 a
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마 b
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
-                         , 스키마.3E3C23302E333E3C28@SMISR_스키마 g
+                      from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마 a
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마 b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마 f
+                         , 스키마.3E3C23302E333E3C28@DAWNR_스키마 g
                      where 
                            a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
@@ -8758,8 +8765,8 @@ for drh in (
             end;
             end loop;
        
-:var_msg2  := 'update '  || to_char(upcnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
+:var_msg2  := '남녀스: update '  || to_char(upcnt)    || ' 건';
+:var_msg3  := '남녀스: error '   || to_char(errcnt)   || ' 건';
    
 end ;
 /
@@ -9394,10 +9401,10 @@ for drh in (
                                                                       ,'RR127Y' ,'1'--,''))             RRQ1007     □ 입안이 자주 헌다.                                              
                                                                       ,decode(f.inpc_cd,'MA1','9999','')
                                                                       )) sy9_15
-                      from 스키마.3E3C0E433E3C0E3E28@SMISR_스키마 a
-                         , 스키마.0E5B5B285B28402857@SMISR_스키마 b
-                         , 스키마.3E3C23302E333E0E28@SMISR_스키마 f
-                         , 스키마.3E3C23302E333E3C28@SMISR_스키마 g
+                      from 스키마.3E3C0E433E3C0E3E28@DAWNR_스키마 a
+                         , 스키마.0E5B5B285B28402857@DAWNR_스키마 b
+                         , 스키마.3E3C23302E333E0E28@DAWNR_스키마 f
+                         , 스키마.3E3C23302E333E3C28@DAWNR_스키마 g
                      where 
                            a.ordr_prrn_ymd between to_date(&qfrdt,'yyyymmdd') and to_date(&qtodt,'yyyymmdd')
                        and a.ordr_ymd is not null
@@ -9539,8 +9546,8 @@ for drh in (
             end;
             end loop;
        
-:var_msg2  := 'update '  || to_char(upcnt)    || ' 건';
-:var_msg3  := 'error '   || to_char(errcnt)   || ' 건';
+:var_msg2  := '계통별: update '  || to_char(upcnt)    || ' 건';
+:var_msg3  := '계통별: error '   || to_char(errcnt)   || ' 건';
    
 end ;
 /
