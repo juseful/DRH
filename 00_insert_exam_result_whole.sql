@@ -827,19 +827,295 @@ commit;
    
 end ;
 /
-   
----- 결과치환 대상 검사 data update
---begin
---   
---             ;
---                  
---commit;
---   
---end ;
---/
---spool off;
---    
 spool off;
+
+-- calculated data update
+begin
+   
+-- PT sec, INR result update
+update 스키마.1543294D47144D43333E2E1428 b
+   set b.cleaned_ncvl_vl = null
+     , b.last_updt_dt = sysdate
+ where exists (
+select a.*
+  from (
+        select a.*
+             , nullif(nvl(to_number(a.pt_or),0),0)/nullif(nvl(to_number(a.inr_or),0),0) calvl
+          from (   
+                select a.PTNO
+                     , a.sm_date
+                     , a.APNT_NO
+                     , a.EXMN_TYP
+                     , a.ORDR_CD
+                     , a.ORDR_SNO
+                     , a.ordr_ymd
+                     , a.exec_time
+                     , max(decode(a.exmn_cd,'BL211101',a.CLEANED_NCVL_VL,'')) PT_CLEANED
+                     , max(decode(a.exmn_cd,'BL211101',a.EXRS_NCVL_VL,'')) PT_OR
+                     , max(decode(a.exmn_cd,'BL211103',a.CLEANED_NCVL_VL,'')) INR_CLEANED
+                     , max(decode(a.exmn_cd,'BL211103',a.EXRS_NCVL_VL,'')) INR_OR
+                  from 스키마.1543294D47144D43333E2E1428 a
+                 where sm_date between to_date(&indata_frdt,'yyyymmdd') and to_date(&indata_todt,'yyyymmdd')
+                    and a.exmn_cd in ('BL211101','BL211103')
+                 group by a.PTNO
+                     , a.sm_date
+                     , a.APNT_NO
+                     , a.EXMN_TYP
+                     , a.ORDR_CD
+                     , a.ORDR_SNO
+                     , a.ordr_ymd
+                     , a.exec_time
+               ) a
+       ) a
+ where (a.calvl > 20
+       or
+        a.calvl is null
+       )
+                  and b.ptno = a.ptno
+                  and b.sm_date = a.sm_date
+                  and b.apnt_no = a.apnt_no
+                  and b.ordr_sno = a.ordr_sno
+                  and b.exmn_cd in ('BL211101','BL211103')
+              )
+             ;
+                 
+commit;
+   
+end ;
+/
+spool off;
+   
+-- calculated data update
+begin
+   
+-- Vitamin D 오류값 update
+update 스키마.1543294D47144D43333E2E1428 b
+   set b.cleaned_ncvl_vl = (
+                            select max(decode(X.exmn_cd,'BL399201',X.CLEANED_NCVL_VL,'')) 
+                                  +max(decode(X.exmn_cd,'BL399202',X.CLEANED_NCVL_VL,''))
+                              from 스키마.1543294D47144D43333E2E1428 x
+                             where x.exmn_cd in ('BL399201','BL399202')
+                               and B.PTNO = x.ptno
+                               and b.sm_date = x.sm_date
+                               and b.apnt_no = x.apnt_no                             
+                           )
+     , B.LAST_UPDT_DT = sysdate
+ where exists 
+       (-- Vitamin D
+        select 'y'
+          from (
+                select a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO
+                     , max(decode(a.exmn_cd,'BL399201',A.CLEANED_NCVL_VL,'')) BL399201
+                     , max(decode(a.exmn_cd,'BL399201',A.EXRS_NCVL_VL,''))    BL399201_O
+                     , max(decode(a.exmn_cd,'BL399202',A.CLEANED_NCVL_VL,'')) BL399202
+                     , max(decode(a.exmn_cd,'BL399202',A.EXRS_NCVL_VL,''))    BL399202_O
+                     , max(decode(a.exmn_cd,'BL399203',A.CLEANED_NCVL_VL,'')) BL399203
+                     , max(decode(a.exmn_cd,'BL399203',A.EXRS_NCVL_VL,''))    BL399203_O
+                     , max(decode(a.exmn_cd,'BL399201',A.CLEANED_NCVL_VL,'')) 
+                      +max(decode(a.exmn_cd,'BL399202',A.CLEANED_NCVL_VL,'')) calvl
+                     , case
+                            when max(decode(a.exmn_cd,'BL399201',A.CLEANED_NCVL_VL,'')) 
+                                +max(decode(a.exmn_cd,'BL399202',A.CLEANED_NCVL_VL,''))
+                               !=max(decode(a.exmn_cd,'BL399203',A.CLEANED_NCVL_VL,'')) 
+                            then 'Y'
+                       else 'N'
+                       end erroryn
+                  from 스키마.1543294D47144D43333E2E1428 a
+                 where a.sm_date between to_date(&indata_frdt,'yyyymmdd') and to_date(&indata_todt,'yyyymmdd')
+                   and a.ordr_cd like 'BL3992'
+                 group by a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO
+               ) a
+         where a.erroryn = 'Y'
+           and b.ptno = a.ptno
+           and b.sm_date = a.sm_date
+           and b.apnt_no = a.apnt_no
+       )
+   and b.exmn_cd like 'BL399203%'
+             ;
+                 
+commit;
+   
+end ;
+/
+spool off;
+   
+-- calculated data update
+begin
+   
+-- HBs NR 오류값 update
+update 스키마.1543294D47144D43333E2E1428 b
+   set b.cleaned_ncvl_vl = null
+     , B.LAST_UPDT_DT = sysdate
+ where exists 
+       (-- HBs NR
+        select *
+          from (
+                select a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO
+                     , max(decode(a.exmn_cd,'NR0101',A.CLEANED_NCVL_VL,'')) NR0101
+                     , max(decode(a.exmn_cd,'NR0102',A.CLEANED_NCVL_VL,'')) NR0102
+                     , max(decode(a.exmn_cd,'NR0103',A.CLEANED_NCVL_VL,'')) NR0103
+                     , max(decode(a.exmn_cd,'NR0101',A.EXRS_NCVL_VL,'')) NR0101_O
+                     , max(decode(a.exmn_cd,'NR0102',A.EXRS_NCVL_VL,'')) NR0102_O
+                     , max(decode(a.exmn_cd,'NR0103',A.EXRS_NCVL_VL,'')) NR0103_O
+                     , case
+                            when max(decode(a.exmn_cd,'NR0101',A.CLEANED_NCVL_VL,'')) = 1
+                             and 
+                                 max(decode(a.exmn_cd,'NR0102',A.CLEANED_NCVL_VL,'')) = 1
+                             and 
+                                 max(decode(a.exmn_cd,'NR0103',A.CLEANED_NCVL_VL,'')) = 0 
+                            then 'Y'
+                       else 'N'
+                       end erroryn
+                  from 스키마.1543294D47144D43333E2E1428 a
+                 where a.sm_date between to_date(&indata_frdt,'yyyymmdd') and to_date(&indata_todt,'yyyymmdd')
+                   and a.ordr_cd like 'NR01%'
+                 group by a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO
+               ) a
+         where a.erroryn = 'Y'
+           and b.ptno = a.ptno
+           and b.sm_date = a.sm_date
+           and b.apnt_no = a.apnt_no
+       )
+   and b.exmn_cd like 'NR01%'
+             ;
+                 
+commit;
+   
+end ;
+/
+spool off;
+   
+-- calculated data update
+begin
+   
+-- BUN/Cr ratio 오류값 update
+update 스키마.1543294D47144D43333E2E1428 b
+   set b.cleaned_ncvl_vl = (
+                            select round(
+                                         max(decode(x.exmn_cd,'BL3119',x.CLEANED_NCVL_VL,'')) 
+                                        /max(decode(x.exmn_cd,'BL3120',x.CLEANED_NCVL_VL,''))
+                                        ,1 
+                                        )
+                              from 스키마.1543294D47144D43333E2E1428 x
+                             where B.PTNO = x.ptno
+                               and b.sm_date = x.sm_date
+                               and b.apnt_no = x.apnt_no
+                               and b.exec_time = x.exec_time
+                               and x.exmn_cd in ('BL3119','BL3120')
+                           )
+     , B.LAST_UPDT_DT = sysdate
+ where exists 
+       (-- BUN/Cr ratio
+        select *
+          from (
+                select a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO, a.exec_time
+                     , max(decode(a.exmn_cd,'BL3119',A.EXRS_NCVL_VL,'')) BL3119
+                     , max(decode(a.exmn_cd,'BL3120',A.EXRS_NCVL_VL,'')) BL3120
+                     , max(decode(a.exmn_cd,'BL312001',A.EXRS_NCVL_VL,'')) BL312001
+                     , round(
+                             max(decode(a.exmn_cd,'BL3119',A.CLEANED_NCVL_VL,'')) 
+                            /max(decode(a.exmn_cd,'BL3120',A.CLEANED_NCVL_VL,''))
+                            ,1 
+                            ) calvl
+                     , case
+                            when 
+                                 ROUND(
+                                       max(decode(a.exmn_cd,'BL3119',A.CLEANED_NCVL_VL,'')) 
+                                      /max(decode(a.exmn_cd,'BL3120',A.CLEANED_NCVL_VL,''))
+                                      ,1
+                                      ) 
+                                !=nvl(
+                                      max(decode(a.exmn_cd,'BL312001',A.EXRS_NCVL_VL,''))
+                                     ,0
+                                     )
+                            then 'Y'
+                       else 'N'
+                       end erroryn
+                  from 스키마.1543294D47144D43333E2E1428 a
+                 where 
+                       a.sm_date between to_date(&indata_frdt,'yyyymmdd') and to_date(&indata_todt,'yyyymmdd')
+                   and a.exmn_cd in ('BL3119','BL3120','BL312001')
+                 group by a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO, a.exec_time
+               ) a
+         where a.erroryn = 'Y'
+           and b.ptno = a.ptno
+           and b.sm_date = a.sm_date
+           and b.apnt_no = a.apnt_no
+       )
+   and b.exmn_cd = 'BL312001'
+             ;
+                 
+commit;
+   
+end ;
+/
+spool off;
+   
+-- calculated data update
+begin
+   
+-- URINE Albumin/Cr ratio 오류값 update
+update 스키마.1543294D47144D43333E2E1428 b
+   set b.cleaned_ncvl_vl = (
+                            select round(
+                                         max(decode(x.exmn_cd,'BL3252',x.CLEANED_NCVL_VL,'')) 
+                                        /max(decode(x.exmn_cd,'BL3249',x.CLEANED_NCVL_VL,''))*1000
+                                        ,2
+                                        )
+                              from 스키마.1543294D47144D43333E2E1428 x
+                             where B.PTNO = x.ptno
+                               and b.sm_date = x.sm_date
+                               and b.apnt_no = x.apnt_no
+                               and b.exec_time = x.exec_time
+                               and x.exmn_cd in ('BL3249','BL3252')
+                           )
+     , B.LAST_UPDT_DT = sysdate
+ where exists 
+       (-- URINE Albumin/Cr ratio
+        select *
+          from (
+                select a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO, A.EXEC_TIME
+                     , max(decode(a.exmn_cd,'BL3249',A.CLEANED_NCVL_VL,'')) BL3249
+                     , max(decode(a.exmn_cd,'BL3252',A.CLEANED_NCVL_VL,'')) BL3252
+                     , max(decode(a.exmn_cd,'BL326501',A.CLEANED_NCVL_VL,'')) BL326501
+                     , max(decode(a.exmn_cd,'BL3249',A.EXRS_NCVL_VL,'')) BL3249_O
+                     , max(decode(a.exmn_cd,'BL3252',A.EXRS_NCVL_VL,'')) BL3252_O
+                     , max(decode(a.exmn_cd,'BL326501',A.EXRS_NCVL_VL,'')) BL326501_O
+                     , ROUND(
+                             max(decode(a.exmn_cd,'BL3252',A.EXRS_NCVL_VL,''))/
+                             max(decode(a.exmn_cd,'BL3249',A.EXRS_NCVL_VL,''))*1000
+                            ,2 
+                            )calvl
+                     , case
+                            when max(decode(a.exmn_cd,'BL326501',A.EXRS_NCVL_VL,''))
+                                -ROUND(
+                                       (max(decode(a.exmn_cd,'BL3252',A.EXRS_NCVL_VL,''))/
+                                        max(decode(a.exmn_cd,'BL3249',A.EXRS_NCVL_VL,''))*1000
+                                       )
+                                      ,2
+                                      ) > 0.1
+                            then 'Y'
+                       else 'N'
+                       end erroryn
+                  from 스키마.1543294D47144D43333E2E1428 a
+                 where a.sm_date between to_date(&indata_frdt,'yyyymmdd') and to_date(&indata_todt,'yyyymmdd')
+                   and a.ordr_cd like 'BL32%'
+                 group by a.ptno, a.sm_date, a.apnt_no, a.ordr_cd, A.ORDR_SNO, A.EXEC_TIME
+               ) a
+         where a.erroryn = 'Y'
+           and b.ptno = a.ptno
+           and b.sm_date = a.sm_date
+           and b.apnt_no = a.apnt_no
+       )
+   and b.exmn_cd = 'BL326501'
+             ;
+                 
+commit;
+   
+end ;
+/
+spool off;
+
     
 -- systolic BP data insert
 -- 메시지 출력기능 추가. 메시지 확인은 F5를 눌러야 가능함
